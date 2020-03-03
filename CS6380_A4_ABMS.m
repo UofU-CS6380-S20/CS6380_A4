@@ -36,6 +36,8 @@ DRAW = 'DRAW';
 FILM = 'FILM';
 SEND_FILM = 'SEND_FILM';
 
+M = [];
+
 cur_time = 0;
 [num_ports,dummy] = size(ports);
 num_agents = length(fnames);
@@ -104,6 +106,7 @@ while cur_time<=max_t
         percept.messages = messages_out;
         % Call agent
         action = feval(fnames(a).name,percept);
+        mess = action.messages;
         af = fieldnames(action);
         if length(af)<6
             action.realx = [];

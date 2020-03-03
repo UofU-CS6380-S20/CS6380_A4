@@ -84,7 +84,6 @@ done = 0;
 while done==0
     switch state
         case SETUP_FLIGHTS  % assign waiting flights
-            state = HANDLE_PERCEPTS;
             [indexes,too_late] = CS6380_get_waiting_flights(flights,...
                 cur_time);
             if ~isempty(too_late) % Set unsuccessful flag
@@ -93,27 +92,20 @@ while done==0
                     flights(too_late(ind)).status = 3;
                 end
             end
-            num_flights = length(flights);  % free up finished flights
+            num_flights = length(flights);
             for f = 1:num_flights
                 if flights(f).stop_time<=cur_time&flights(f).status==2
-                    flights(f).status = 4;
-                    UAS_num = flights(f).UAS;
-                    UAS_indexes = find(UAS_assigned~=UAS_num);
-                    UAS_assigned = UAS_assigned(UAS_indexes);
-                    UAS_free = [UAS_free,UAS_num];
-                end
-            end
+                    flight
             num_indexes = length(indexes);  %assign waiting flights
             for ind = 1:num_indexes
                 f = indexes(ind);
                 start_time = flights(f).start_time;
-                if ~isempty(UAS_free)
+               if ~isempty(UAS_free)
                     index = UAS_free(1);
                     UAS_free = UAS_free(2:end);
                     UAS_assigned = [UAS_assigned,index];
                     flights(f).status = 2;
-                    flights(f).UAS = index;
-                    UAS(index).flights = [UAS(index).flights,f];
+                    UAS(index).flights = f;
                     mo = CS6380_make_message(UAS(index).name,MY_ID,...
                         AWARD_CON,num2str(f),flights(f));
                     messages_out = [messages_out;mo];
@@ -150,15 +142,15 @@ while done==0
                     UAS_assigned = [UAS_assigned,index];
                     f = num_flights;
                     flights(f).status = 2;
-                    flights(f).UAS = index;
-                    UAS(index).flights = [UAS(index).flights,f];
+                    UAS(index).flights = f;
                     mo = CS6380_make_message(UAS(index).name,MY_ID,...
                         AWARD_CON,num2str(UAS(index).flights),f);
                     messages_out = [messages_out;mo];
                 end
             end
-        case HANDLE_PERCEPTS % handle messages
-            state = EXIT;
+            state = 2;
+        case 2 % handle messages
+            state = 4;
             if ~isempty(messages_in)
                 num_messages_in = length(messages_in);
                 for m = 1:num_messages_in
@@ -299,8 +291,8 @@ while done==0
                     end
                 end
             end
-        case CALL_FOR_BIDS % CFB
-            state = EXIT;
+        case 3 % CFB
+            state = 4;
             break
             flights(f).USS_response = pairs;
             if isempty(pairs) % deconflict and send CFB
@@ -312,9 +304,9 @@ while done==0
                     flights(f));
                 messages_out = [messages_out;mo];
             end
-        case EXIT % exit state
+        case 4 % exit state
             action.messages = messages_out;
-            state = SETUP_FLIGHTS;
+            state = 1;
             done = 1;
     end
 end
