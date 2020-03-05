@@ -57,14 +57,14 @@ if isempty(state)
     in_flight = 0;
     new_award = 0;
     priorities = Inf*ones(num_atoms,2);
+    priorities(ASSIGNED,2) = 1;
     priorities(NOMINAL,2) = 1;
-    KB(1).clauses = [NOMINAL];
-    KB(2).clauses = [-IN_LANE, -ON_HEADNG, -SPEED_OK, NOMINAL];
-    KB(3).clauses = [-ASSIGNED];
-    KB(4).clauses = [-IN_FLIGHT];
-    KB(5).clauses = [-AT_START];
-    KB(6).clauses = [-AT_NEXT_WAYPT];
-    KB(7).clauses = [-LAST_LANE,-AT_NEXT_WAYPT,AT_FINISH];
+    KB(1).clauses = [-IN_LANE, -ON_HEADNG, -SPEED_OK, NOMINAL];
+    KB(2).clauses = [-ASSIGNED];
+    KB(3).clauses = [-IN_FLIGHT];
+    KB(4).clauses = [-AT_START];
+    KB(5).clauses = [-AT_NEXT_WAYPT];
+    KB(6).clauses = [-LAST_LANE,-AT_NEXT_WAYPT,AT_FINISH];
     intentions_stack = [ASSIGNED];
     messages_out = CS6380_make_message(BROADCAST,MY_ID,ANNOUNCE_SELF,[],[]);
 end
@@ -166,14 +166,9 @@ while done==0
             cur_lane = 1;
             num_lanes = length(traj(:,1));
             CS6380_Tell_clause(KB,[AT_START]);
-            CS6380_Tell_clause(KB,[-AT_FINISH]);
             CS6380_Tell_clause(KB,[-AT_NEXT_WAYPT]);
         case ANALYZER
             state = FILTER;
-            nominal = 2*CS6380_Ask_clause(KB,[NOMINAL])-1;
-            CS6380_Tell_clause(KB,[nominal*NOMINAL]);
-            at_finish = 2*CS6380_Ask_clause(KB,[AT_FINISH])-1;
-            CS6380_Tell_clause(KB,[at_finish*AT_FINISH]);
         case FILTER
             state = EXECUTE_PLAN;
             if CS6380_Ask_clause(KB,[-ASSIGNED])
@@ -239,7 +234,6 @@ while done==0
             KB = CS6380_Tell_clause(KB,[SPEED_OK]);
             KB = CS6380_Tell_clause(KB,[-ASSIGNED]);
             KB = CS6380_Tell_clause(KB,[-IN_FLIGHT]);
-            KB = CS6380_Tell_clause(KB,[-AT_FINISH]);
             KB = CS6380_Tell_clause(KB,[-AT_START]);
             KB = CS6380_Tell_clause(KB,[-LAST_LANE]);
         case EXIT

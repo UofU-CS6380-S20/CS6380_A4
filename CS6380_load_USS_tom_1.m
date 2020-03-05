@@ -6,7 +6,7 @@ LAUNCH_PROB = 1;
 MIN_START_GAP = 1;
 MAX_START_GAP = 3;
 BASE = 99;
-num_UAS = 5;
+num_UAS = 10;
 
 % state variables
 

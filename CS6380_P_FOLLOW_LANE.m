@@ -8,4 +8,4 @@ dx = dir(1);
 dy = dir(2);
 dz = dir(3);
 dist = norm(l_exit-loc);
-speed = min(MAX_SPEED,dist/del_t);
+speed = min(max_speed,dist/del_t);

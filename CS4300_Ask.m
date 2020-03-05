@@ -34,6 +34,7 @@ for s = 1:len_sentence
     fd = fopen('popoo','r');
     t = fscanf(fd,'%s');
     if ~isempty(t)
+        fclose(fd);
         return
     end
     clear t

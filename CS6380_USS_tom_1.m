@@ -145,7 +145,8 @@ while done==0
                 num_flights = num_flights + 1;
                 % Assign to next UAS
                 if ~isempty(UAS_free)
-                    index = UAS_free(1);
+                    UAS_num = UAS_free(1);
+                    index = UAS_num - BASE;
                     UAS_free = UAS_free(2:end);
                     UAS_assigned = [UAS_assigned,index];
                     f = num_flights;
@@ -153,7 +154,7 @@ while done==0
                     flights(f).UAS = index;
                     UAS(index).flights = [UAS(index).flights,f];
                     mo = CS6380_make_message(UAS(index).name,MY_ID,...
-                        AWARD_CON,num2str(UAS(index).flights),f);
+                        AWARD_CON,num2str(UAS(index).flights),flights(f));
                     messages_out = [messages_out;mo];
                 end
             end

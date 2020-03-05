@@ -79,7 +79,7 @@ if film==1  % tell ATOC to produce film of simulation
 end
 
 while cur_time<=max_t
-    cur_time = cur_time + del_t;
+    cur_time = cur_time + del_t
     count = count + 1;
     waitbar(cur_time/max_t);
     messages_out = messages_in;

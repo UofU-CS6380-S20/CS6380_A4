@@ -1,5 +1,5 @@
-function action = CS6380_UAS_tom_101(percept)
-% CS6380_UAS_tom_101 - UAS agent: flies trajectory
+function action = CS6380_UAS_tom_109(percept)
+% CS6380_UAS_tom_109 - UAS agent: flies trajectory
 % On input:
 %     percept (struct vector): agent percept data
 %       .x (float): x position of agent
@@ -19,7 +19,7 @@ function action = CS6380_UAS_tom_101(percept)
 %       .speed (float): speed to move
 %       .messages (struct vector)
 % Call:
-%     action = CS6380_UAS_tom_101(percept);
+%     action = CS6380_UAS_tom_109(percept);
 % Author:
 %     T. Henderson
 %     UU
@@ -29,7 +29,7 @@ function action = CS6380_UAS_tom_101(percept)
 CS6380_load_ABMS_data;
 CS6380_load_UAS_tom;
 
-MY_ID = 'UAS_tom_101';
+MY_ID = 'UAS_tom_109';
 
 persistent state USS UAS state_vars
 persistent lanes cur_lane num_lanes
