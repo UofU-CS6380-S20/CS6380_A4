@@ -94,15 +94,15 @@ while done==0
                 end
             end
             num_flights = length(flights);  % free up finished flights
-            for f = 1:num_flights
-                if flights(f).stop_time<=cur_time&flights(f).status==2
-                    flights(f).status = 4;
-                    UAS_num = flights(f).UAS;
-                    UAS_indexes = find(UAS_assigned~=UAS_num);
-                    UAS_assigned = UAS_assigned(UAS_indexes);
-                    UAS_free = [UAS_free,UAS_num];
-                end
-            end
+%            for f = 1:num_flights
+%                if flights(f).stop_time<=cur_time&flights(f).status==2
+%                    flights(f).status = 4;
+%                    UAS_num = flights(f).UAS;
+%                    UAS_indexes = find(UAS_assigned~=UAS_num);
+%                    UAS_assigned = UAS_assigned(UAS_indexes);
+%                    UAS_free = [UAS_free,UAS_num];
+%                end
+%            end
             num_indexes = length(indexes);  %assign waiting flights
             for ind = 1:num_indexes
                 f = indexes(ind);
@@ -291,6 +291,13 @@ while done==0
                                         MY_ID,REJECT_CON,mess_subtype,[]);
                                     messages_out = [messages_out;mo];
                                 end
+                            elseif strcmp(mess_type,MISSION_DONE)
+                                f = UAS(index).flights(end);
+                                flights(f).status = 4;
+                                UAS_num = flights(f).UAS;
+                                UAS_indexes = find(UAS_assigned~=UAS_num);
+                                UAS_assigned = UAS_assigned(UAS_indexes);
+                                UAS_free = [UAS_free,UAS_num];
                             elseif strcmp(mess_type,TELEMETRY)...
                                     &strcmp(mess_to,MY_ID)
                                 f_index = str2num(mess_subtype);

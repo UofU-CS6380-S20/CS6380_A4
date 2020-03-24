@@ -30,13 +30,14 @@ CS6380_load_ABMS_data;
 CS6380_load_UAS_tom;
 
 MY_ID = 'UAS_tom_102';
+NO_GOAL = 0;
 
 persistent state USS UAS state_vars
 persistent lanes cur_lane num_lanes
 persistent intentions_stack traj set_dir set_speed l_entry l_exit
 persistent ATOC GRS in_flight
-persistent my_flight new_award
-persistent KB priorities
+persistent my_flight new_award flight_id
+persistent KB priorities goals
 
 messages_out = [];
 
@@ -55,16 +56,28 @@ if isempty(state)
     num_lanes = 0;
     cur_lane = 0;
     in_flight = 0;
+    flight_id = 0;
     new_award = 0;
-    priorities = Inf*ones(num_atoms,2);
-    priorities(ASSIGNED,2) = 1;
-    priorities(NOMINAL,2) = 1;
+    priorities = zeros(num_atoms,2);
+    goals = [...
+        IN_LANE,       0, 20;...
+        ON_HEADING,    0, 30;...
+        SPEED_OK,      0, 40;...
+        ASSIGNED,      0, 10;...
+        AT_NEXT_WAYPT, 0, 50;...
+        ADVANCE_LANE,  0, 60;...
+        WRAP_UP,       0, 70];
     KB(1).clauses = [-IN_LANE, -ON_HEADING, -SPEED_OK, NOMINAL];
-    KB(2).clauses = [-ASSIGNED];
-    KB(3).clauses = [-IN_FLIGHT];
-    KB(4).clauses = [-AT_START];
-    KB(5).clauses = [-AT_NEXT_WAYPT];
-    KB(6).clauses = [-LAST_LANE,-AT_NEXT_WAYPT,AT_FINISH];
+    KB(2).clauses = [-LAST_LANE,-AT_NEXT_WAYPT,AT_FINISH];
+    KB(3).clauses = [-IN_LANE];
+    KB(4).clauses = [-ON_HEADING];
+    KB(5).clauses = [-SPEED_OK];
+    KB(6).clauses = [-ASSIGNED];
+    KB(7).clauses = [-IN_FLIGHT];
+    KB(8).clauses = [-AT_START];
+    KB(9).clauses = [-AT_NEXT_WAYPT];
+    KB(10).clauses = [-ADVANCE_LANE];
+    KB(11).clauses = [-WRAP_UP];
     intentions_stack = [ASSIGNED];
     messages_out = CS6380_make_message(BROADCAST,MY_ID,ANNOUNCE_SELF,[],[]);
 end
@@ -114,6 +127,7 @@ while done==0
                                     &strcmp(mess_to,MY_ID)&new_award==0
                                 new_award = 1;
                                 my_flight = mess_data;
+                                flight_id = str2num(mess_subtype);
                                 realx = my_flight.traj(1,1);
                                 realy = my_flight.traj(1,2);
                                 realz = my_flight.traj(1,3);
@@ -127,10 +141,15 @@ while done==0
                     KB = CS6380_Tell_clause(KB,[ASSIGNED]);
                     state = SETUP_FLIGHT;
                 end
-                KB = CS6380_Tell_clause(KB,[IN_LANE]);
-                KB = CS6380_Tell_clause(KB,[ON_HEADING]);
-                KB = CS6380_Tell_clause(KB,[SPEED_OK]);
+%                KB = CS6380_Tell_clause(KB,[IN_LANE]);
+%                KB = CS6380_Tell_clause(KB,[ON_HEADING]);
+%                KB = CS6380_Tell_clause(KB,[SPEED_OK]);
             else
+                if isequal([xa;ya;za],traj(1,1:3)')
+                    KB = CS6380_Tell_clause(KB,[AT_START]);
+                else
+                    KB = CS6380_Tell_clause(KB,[-AT_START]);
+                end
                 if abs(norm(loc-l_entry)+norm(loc-l_exit)...
                         -norm(l_exit-l_entry))<IN_LANE_THRESH
                     KB = CS6380_Tell_clause(KB,[IN_LANE]);
@@ -158,60 +177,74 @@ while done==0
                     KB = CS6380_Tell_clause(KB,[-LAST_LANE]);
                 end
             end
+            % Set truth values of goal variables
+            goals = CS6380_set_goals_truth(goals,KB);
         case SETUP_FLIGHT
             state = ANALYZER;
-            my_flight = mess_data;
-            traj = mess_data.traj;
+            traj = my_flight.traj;
             l_entry = traj(1,1:3)';
             l_exit = traj(1,4:6)';
             cur_lane = 1;
             num_lanes = length(traj(:,1));
-            CS6380_Tell_clause(KB,[AT_START]);
-            CS6380_Tell_clause(KB,[-AT_NEXT_WAYPT]);
+            new_award = 0;
+            KB = CS6380_Tell_clause(KB,[AT_START]);
+            KB = CS6380_Tell_clause(KB,[-AT_NEXT_WAYPT]);
         case ANALYZER
             state = FILTER;
+            indexes = find(goals(:,2)==0);
+            desires = goals(indexes,:);
+            [vals,indexes_sorted] = sort(desires(:,3));
+            cur_intention = desires(indexes_sorted(1),1);
+            if isempty(intentions_stack)|cur_intention~=intentions_stack(1)
+                intentions_stack = [cur_intention; intentions_stack];
+            end
         case FILTER
             state = EXECUTE_PLAN;
-            if CS6380_Ask_clause(KB,[-ASSIGNED])...
-                    |cur_time<my_flight.start_time
-                plan = P_WAIT;
-            else
-                mo = CS6380_make_message(BROADCAST,MY_ID,TELEMETRY,...
-                    my_flight.id,[xa, ya, za, dx, dy, dz, speed]);
-                messages_out = [messages_out;mo];
-                if intentions_stack(1)==ASSIGNED
-                    [goal,intentions_stack] = CS6380_pop(intentions_stack);
-                    intentions_stack = ...
-                        CS6380_push(intentions_stack,[NOMINAL]);
-                end
-                if CS6380_Ask_clause(KB,[-NOMINAL])
-                    if CS6380_Ask_clause(KB,[-IN_LANE]);
-                        plan = P_GO_TO_LANE;
-                    elseif CS6380_Ask_clause(KB,[-ON_HEADING])
-                        plan = P_CORRECT_HEADING;
-                    else
-                        plan = P_CORRECT_SPEED;
-                    end
-                else
-                    if intentions_stack(1)==NOMINAL
-                        [goal,intentions_stack]...
-                            = CS6380_pop(intentions_stack);
-                        intentions_stack = CS6380_push(intentions_stack,...
-                            AT_NEXT_WAYPT);
-                    end
-                    if CS6380_Ask_clause(KB,[-AT_NEXT_WAYPT])
+            [cur_goal,intentions_stack] = CS6380_pop(intentions_stack);
+            switch cur_goal
+                case NO_GOAL
+                    plan = P_WAIT;
+                    mo = [];
+                case ASSIGNED
+                    plan = P_WAIT;
+                    mo = [];
+                case IN_LANE
+                    plan = P_GO_TO_LANE;
+                    mo = CS6380_make_message(BROADCAST,MY_ID,TELEMETRY,...
+                        my_flight.id,[xa, ya, za, dx, dy, dz, speed]);
+                    messages_out = [messages_out;mo];
+                case ON_HEADING
+                    plan = P_CORRECT_HEADING;
+                    mo = CS6380_make_message(BROADCAST,MY_ID,TELEMETRY,...
+                        my_flight.id,[xa, ya, za, dx, dy, dz, speed]);
+                    messages_out = [messages_out;mo];
+                case SPEED_OK
+                    plan = P_CORRECT_SPEED;
+                    mo = CS6380_make_message(BROADCAST,MY_ID,TELEMETRY,...
+                        my_flight.id,[xa, ya, za, dx, dy, dz, speed]);
+                    messages_out = [messages_out;mo];
+                case AT_NEXT_WAYPT
+                    plan = P_FOLLOW_LANE;
+                    mo = CS6380_make_message(BROADCAST,MY_ID,TELEMETRY,...
+                        my_flight.id,[xa, ya, za, dx, dy, dz, speed]);
+                    messages_out = [messages_out;mo];
+                case ADVANCE_LANE
+                    if cur_lane<num_lanes
+                        cur_lane = cur_lane + 1;
+                        l_entry = traj(cur_lane,1:3)';
+                        l_exit = traj(cur_lane,4:6)';
                         plan = P_FOLLOW_LANE;
                     else
-                        if cur_lane<num_lanes
-                            cur_lane = cur_lane + 1;
-                            l_entry = traj(cur_lane,1:3);
-                            l_exit = traj(cur_lane,4:6);
-                            plan = P_FOLLOW_LANE;
-                        else 
-                            plan = P_WRAP_UP;
-                        end
+                        plan = P_WRAP_UP;
                     end
-                end
+                    mo = CS6380_make_message(BROADCAST,MY_ID,TELEMETRY,...
+                        my_flight.id,[xa, ya, za, dx, dy, dz, speed]);
+                    messages_out = [messages_out;mo];
+                case WRAP_UP
+                    plan = P_WRAP_UP;
+                    mo = CS6380_make_message(BROADCAST,MY_ID,TELEMETRY,...
+                        my_flight.id,[xa, ya, za, dx, dy, dz, speed]);
+                    messages_out = [messages_out;mo];
             end
         case EXECUTE_PLAN
             state = EXIT;
@@ -229,18 +262,23 @@ while done==0
                 case P_FOLLOW_LANE
                     [dx,dy,dz,new_speed] = CS6380_P_FOLLOW_LANE(loc,...
                         l_exit,del_t,MAX_SPEED);
-                case WRAP_UP
-                    state = WRAP_UP;
+                case P_WRAP_UP
+                    state = S_WRAPUP;
             end
-        case WRAP_UP
+        case S_WRAPUP
             state = EXIT;
+            intentions_stack = [ASSIGNED];
             KB = CS6380_Tell_clause(KB,[IN_LANE]);
             KB = CS6380_Tell_clause(KB,[ON_HEADING]);
             KB = CS6380_Tell_clause(KB,[SPEED_OK]);
             KB = CS6380_Tell_clause(KB,[-ASSIGNED]);
             KB = CS6380_Tell_clause(KB,[-IN_FLIGHT]);
             KB = CS6380_Tell_clause(KB,[-AT_START]);
+            KB = CS6380_Tell_clause(KB,[-AT_NEXT_WAYPT]);
             KB = CS6380_Tell_clause(KB,[-LAST_LANE]);
+            mo = CS6380_make_message(MY_USS,MY_ID,MISSION_DONE,...
+                num2str(flight_id),[]);
+            messages_out = [messages_out;mo];
         case EXIT
             state_vars(4) = dx;
             state_vars(5) = dy;
