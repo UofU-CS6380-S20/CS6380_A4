@@ -30,12 +30,7 @@ len_sentence = length(sentence);
 for s = 1:len_sentence
     KB(num_sentences+1).clauses = -sentence(s).clauses;
     CS4300_create_SAT_prob(KB,'HYBKB');
-    % Handle calling sat.py different operation systems.
-    if(isunix)   % If Matlab is running on a GNU/Linux system.
-        system('python sat.py < HYBKB >popoo');
-    else
-        system('sat.py < HYBKB >popoo');
-    end
+    system('sat.py < HYBKB >popoo');
     fd = fopen('popoo','r');
     t = fscanf(fd,'%s');
     if ~isempty(t)
