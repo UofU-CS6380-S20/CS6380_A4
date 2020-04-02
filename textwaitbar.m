@@ -30,16 +30,16 @@ if isempty(i_prev_prct) || i_prct < i_prev_prct
     i_prev_prct = 0;
     S_prev = getPrctStr(i_prev_prct);
     
-    fprintf('%s: %s',msg, S_prev);
+    fprintf('%s | %s',msg, S_prev);
 end
 
 % Print updated percentage.
 if i_prct ~= i_prev_prct
     S_prev = getPrctStr(i_prev_prct);
-    fprintf(getBackspaceStr(numel([msg, '  ', S_prev])));
+    fprintf(getBackspaceStr(numel([msg, ' | ', S_prev])));
     
     S = getPrctStr(i_prct);
-    fprintf('%s: %s',msg, S);
+    fprintf('%s | %s',msg, S);
     
     i_prev_prct = i_prct;
 end

@@ -25,8 +25,12 @@ function action = CS6380_ATOC_tom_1(percept)
 %     UU
 %     Spring 2020
 %
-
-global g_fig
+% MODIFIED: 03/31/2020
+% Authot:
+%   Michael Cline
+%   School of Computing    
+%   University of Utah
+%
 
 CS6380_load_ABMS_data;
 
@@ -35,9 +39,9 @@ DRAW = 'DRAW';
 FILM = 'FILM';
 SEND_FILM = 'SEND_FILM';
 
-persistent state USS UAS flights AgentNames AgentTypes A_table uit fig
+persistent state USS UAS flights AgentNames AgentTypes table_fname
 persistent x_min y_min x_max y_max nx ny ports grid_request
-persistent draw film M m_count
+persistent draw film M m_count table_title
 
 messages_out = [];
 
@@ -49,15 +53,13 @@ if isempty(state)
     draw = 0;
     film = 0;
     m_count = 0;
-    AgentNames = {'ATOC_tom_1'};
-    AgentTypes = {'ATOC'};
-    fig = uifigure('Position',[100 100 752 250]);
-    uit = uitable('Parent',fig,'Position',[25 50 700 200]);
-    A_table = table(AgentNames,AgentTypes);
-    A_table.AgentTypes = categorical(A_table.AgentTypes,...
-        {'SIM','ATOC','USS','UAS','GRS'},'Ordinal',true);
-    uit.Data = A_table;
-    g_fig = fig;
+    AgentNames = {'Agent Name', 'ATOC_tom_1'};
+    AgentTypes = {'Agent Type', 'ATOC'};
+    A_table = [[AgentNames] [AgentTypes]];
+    table_fname = [MY_ID, '.html'];
+    table_title = [MY_ID, ' Table'];
+    html_table(A_table, table_fname, 'Caption', table_title);
+    web(table_fname);
     messages_out = CS6380_make_message(BROADCAST,MY_ID,ANNOUNCE_SELF,[],[]);
     mo = CS6380_make_message(BROADCAST,MY_ID,REQUEST_GRID,[],[]);
     messages_out = [messages_out;mo];
@@ -138,10 +140,9 @@ while done==0
             if d1==1
                 AgentTypes = AgentTypes';
             end
-            A_table = table(AgentNames,AgentTypes);
-            A_table.AgentTypes = categorical(A_table.AgentTypes,...
-                {'SIM','ATOC','USS','UAS','GRS'},'Ordinal',true);
-            uit.Data = A_table;
+            A_table = [[AgentNames] [AgentTypes]];
+            html_table(A_table, table_fname, 'Caption', table_title);
+            web(table_fname);
             state = 3;
         case 3  % Flight Display
             if ~isempty(x_min)&(draw==1|film==1)

@@ -26,6 +26,7 @@ function [res,M] = CS6380_A4_ABMS(fnames,ports,max_t,del_t,draw,film,dump)
 %     Spring 2020
 %
 
+
 CS6380_load_ABMS_data;
 X_MIN = min(ports(:,1));
 X_MAX = max(ports(:,1));
@@ -90,7 +91,7 @@ for cur_time = 0:del_t:max_t
     %cur_time = cur_time + del_t
     count = count + 1;
     %    wb.print(cur_time, max_t);
-    textwaitbar(cur_time, max_t, sprintf(['Running ABMS A4 - Current ' ...
+    textwaitbar(cur_time, max_t, sprintf(['Running ABMS A4 | Current ' ...
                         'Time: %.', num_after, 'f'], cur_time));
     messages_out = messages_in;
     messages_in = [];
@@ -104,6 +105,7 @@ for cur_time = 0:del_t:max_t
         dz = agents(a,7);
         sa = agents(a,8);
         ta = agents(a,9);
+        percept = struct();
         percept.x = xa;
         percept.y = ya;
         percept.z = za;
