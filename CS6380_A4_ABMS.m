@@ -85,7 +85,6 @@ end
 num_after = regexp(num2str(cur_time + del_t), '\.', 'split');
 num_after = num_after{2};
 
-%while cur_time<=max_t
 for cur_time = 0:del_t:max_t
     count = count + 1;
     textwaitbar(cur_time, max_t, sprintf(['Running ABMS A4 | Current ' ...
