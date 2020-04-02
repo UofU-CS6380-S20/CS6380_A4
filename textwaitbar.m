@@ -8,15 +8,22 @@ function textwaitbar(i, n, msg)
 %   msg :   text message to print.
 %
 % Date      : 05/23/2019
-% Author    : Xiaoxuan He   <hexxx937@umn.edu>
+% Original Author    : Xiaoxuan He   <hexxx937@umn.edu>
 % Institute : University of Minnesota
+%
+%
+% MODIFIED: 03/31/2020
+% Authot:
+%   Michael Cline
+%   School of Computing    
+%   University of Utah
 %
 
 % Previous percentage number.
 persistent i_prev_prct;
 
 % Current percentage number.
-i_prct = floor(i ./ n * 100);
+i_prct = floor((i ./ n) * 100);
 
 % Print message when counting starts.
 if isempty(i_prev_prct) || i_prct < i_prev_prct
@@ -29,10 +36,10 @@ end
 % Print updated percentage.
 if i_prct ~= i_prev_prct
     S_prev = getPrctStr(i_prev_prct);
-    fprintf(getBackspaceStr(numel(S_prev)));
+    fprintf(getBackspaceStr(numel([msg, '  ', S_prev])));
     
     S = getPrctStr(i_prct);
-    fprintf('%s', S);
+    fprintf('%s: %s',msg, S);
     
     i_prev_prct = i_prct;
 end
