@@ -58,8 +58,7 @@ end
 messages_in = [];
 messages_out = [];
 count = 0;
-%wb = waitbar(0,'Run ABMS A4');
-%progress('_start')
+
 if dump==1
     fd = fopen('popo','w');
 end
@@ -88,9 +87,7 @@ num_after = num_after{2};
 
 %while cur_time<=max_t
 for cur_time = 0:del_t:max_t
-    %cur_time = cur_time + del_t
     count = count + 1;
-    %    wb.print(cur_time, max_t);
     textwaitbar(cur_time, max_t, sprintf(['Running ABMS A4 | Current ' ...
                         'Time: %.', num_after, 'f'], cur_time));
     messages_out = messages_in;
@@ -165,11 +162,7 @@ for cur_time = 0:del_t:max_t
             tch = 0;
         end
     end
-    %if max_t-cur_time<0.1
-    %    tch = 0;
-    %end
 end
-%wb.delete(wb);
 
 res = agents;
 if dump==1
