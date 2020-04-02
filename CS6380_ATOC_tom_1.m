@@ -56,7 +56,7 @@ if isempty(state)
     AgentNames = {'Agent Name', 'ATOC_tom_1'};
     AgentTypes = {'Agent Type', 'ATOC'};
     A_table = [[AgentNames] [AgentTypes]];
-    table_fname = [MY_ID, '.html'];
+    table_fname = [MY_ID, '_table.html'];
     table_title = [MY_ID, ' Table'];
     html_table(A_table, table_fname, 'Caption', table_title);
     web(table_fname);

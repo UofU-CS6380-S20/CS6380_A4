@@ -1,4 +1,4 @@
-function speed_out = CS6380_P_CORRECT_SPEED(set_speed,speed)
+function speed_out = CS6380_P_CORRECT_SPEED(set_speed,speed_in)
 %
 
 if set_speed>speed_in

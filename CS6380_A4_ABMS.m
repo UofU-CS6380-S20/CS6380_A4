@@ -85,7 +85,6 @@ end
 num_after = regexp(num2str(cur_time + del_t), '\.', 'split');
 num_after = num_after{2};
 
-%while cur_time<=max_t
 for cur_time = 0:del_t:max_t
     count = count + 1;
     textwaitbar(cur_time, max_t, sprintf(['Running ABMS A4 | Current ' ...
@@ -102,7 +101,47 @@ for cur_time = 0:del_t:max_t
         dz = agents(a,7);
         sa = agents(a,8);
         ta = agents(a,9);
-        percept = struct();
+
+        %%% Handle rind or wain conditions.
+        %
+        % Assume that:
+        %   1. Raineffect sphere is located at (10, 10, 10) and the
+        %   radius is 10.
+        %   3/ Wind effect sphere is located at (25, 25, 25) and
+        %   the radius is 5.
+        % 
+        % NOTE: For now, there a single effect spheres for wind and
+        % rain. Ultimately, the wind an rain functions will have to
+        % change such that:
+        %  1. There is a function that enables the user to add new
+        %  rain or wind effect spheres to different locations in
+        %  the environment.
+        %  2. There is a function that enables the user to delete
+        %  existing rain or wind spheres from the environment.
+        %  3. There is a function that enables the user to move
+        %  existing rain or wind spheres to new locations within
+        %  the environment.
+        %  4. A (persistent?) data structure that tracks the
+        %  locations of wind/rain effect spheres.
+        %        
+        
+        % Compute the agents distance to affected sphere where
+        % there is rain.
+        if(floor(norm([10, 10, 10] - [xa, ya, za])) <= 10)
+            sa = sa + CS6380_weather_effect('rain', ...
+                                             'rain_max_speed_reduction', 3);
+        end
+
+        % Compute the agents distance to affected sphere where
+        % there is wind.
+        if(floor(norm([25, 25, 25] - [xa, ya, za])) <= 5)
+            result = CS6380_weather_effect('wind', 'wind_speed', 3);
+            xa = xa + result(1);
+            ya = ya + result(2);
+            za = za + result(3);
+            sa = sa + result(4);
+        end
+        
         percept.x = xa;
         percept.y = ya;
         percept.z = za;
